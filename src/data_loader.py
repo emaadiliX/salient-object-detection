@@ -6,6 +6,7 @@ Handles image preprocessing: resizing and normalization.
 import os
 import numpy as np
 from PIL import Image
+from sklearn.model_selection import train_test_split
 
 
 def resize_images(input_folder, output_folder, target_size=224):
@@ -22,7 +23,7 @@ def resize_images(input_folder, output_folder, target_size=224):
             try:
                 input_path = os.path.join(input_folder, filename)
                 image = Image.open(input_path)
-                resized_image = image.resize((target_size, target_size), Image.LANCZOS)
+                resized_image = image.resize((target_size, target_size), Image.Resampling.LANCZOS)
 
                 output_path = os.path.join(output_folder, filename)
                 resized_image.save(output_path)
@@ -51,7 +52,7 @@ def resize_masks(input_folder, output_folder, target_size=224):
             try:
                 input_path = os.path.join(input_folder, filename)
                 mask = Image.open(input_path)
-                resized_mask = mask.resize((target_size, target_size), Image.NEAREST)
+                resized_mask = mask.resize((target_size, target_size), Image.Resampling.NEAREST)
 
                 output_path = os.path.join(output_folder, filename)
                 resized_mask.save(output_path)
@@ -98,6 +99,51 @@ def normalize_mask(mask_path):
     return normalized
 
 
+def split_dataset(image_folder, mask_folder, test_size=0.30, random_state=42):
+    """
+    Split dataset into train (70%), validation (15%), and test (15%) sets.
+    Uses sklearn's train_test_split.
+
+    Args:
+        image_folder: Folder containing images
+        mask_folder: Folder containing masks
+        test_size: Proportion for val+test combined (default 0.30)
+        random_state: Random seed for reproducibility
+
+    Returns:
+        tuple: (train_pairs, val_pairs, test_pairs)
+    """
+    # Collect all image-mask file pairs
+    image_files = sorted([f for f in os.listdir(image_folder)
+                         if f.endswith(('.jpg', '.jpeg', '.png', '.bmp'))])
+
+    file_pairs = []
+    for img_file in image_files:
+        img_path = os.path.join(image_folder, img_file)
+        mask_file = os.path.splitext(img_file)[0] + '.png'
+        mask_path = os.path.join(mask_folder, mask_file)
+        file_pairs.append((img_path, mask_path))
+
+    # Split into train (70%) and temp (30%)
+    train_pairs, temp_pairs = train_test_split(
+        file_pairs,
+        test_size=test_size,
+        random_state=random_state,
+        shuffle=True
+    )
+
+    # Split temp into val (15%) and test (15%)
+    val_pairs, test_pairs = train_test_split(
+        temp_pairs,
+        test_size=0.50,  # gjysa e 30% = 15% 
+        random_state=random_state,
+        shuffle=True
+    )
+
+    print(f"Dataset split: Train={len(train_pairs)}, Val={len(val_pairs)}, Test={len(test_pairs)}")
+
+    return train_pairs, val_pairs, test_pairs
+
 if __name__ == '__main__':
 
     # Resize images
@@ -121,4 +167,12 @@ if __name__ == '__main__':
 
     print(f"Image shape: {test_img.shape}, range: [{test_img.min():.2f}, {test_img.max():.2f}]")
     print(f"Mask shape: {test_mask.shape}, range: [{test_mask.min():.2f}, {test_mask.max():.2f}]")
+
+    # Test dataset split
+    print("\nTesting dataset split...")
+    train_pairs, val_pairs, test_pairs = split_dataset(
+        image_folder='data/ECSSD/resized_images_128',
+        mask_folder='data/ECSSD/resized_masks_128'
+    )
+
     print("\nPreprocessing complete.")
