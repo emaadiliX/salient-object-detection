@@ -7,6 +7,7 @@ import os
 import numpy as np
 from PIL import Image
 from sklearn.model_selection import train_test_split
+from torchvision import transforms
 
 
 def resize_images(input_folder, output_folder, target_size=224):
@@ -99,6 +100,45 @@ def normalize_mask(mask_path):
     return normalized
 
 
+def apply_augmentation(image, mask, augment=True):
+    """
+    Apply augmentations to image and mask pair.
+    Flip and crop are applied to both.
+    Color transforms are only applied to image.
+
+    Args:
+        image: PIL Image (RGB)
+        mask: PIL Image (grayscale)
+        augment: If True, apply augmentations. If False, just convert to tensor.
+
+    Returns:
+        tuple: (image_tensor, mask_tensor)
+    """
+    if augment:
+        # Random flip
+        if np.random.random() > 0.5:
+            image = transforms.functional.hflip(image)
+            mask = transforms.functional.hflip(mask)
+
+        # Random crop (same params for both)
+        if np.random.random() > 0.5:
+            i, j, h, w = transforms.RandomResizedCrop.get_params(
+                image, scale=(0.8, 1.0), ratio=(0.9, 1.1)
+            )
+            image = transforms.functional.resized_crop(image, i, j, h, w, image.size)
+            mask = transforms.functional.resized_crop(mask, i, j, h, w, mask.size)
+
+        # Color jitter (only for image, not mask)
+        if np.random.random() > 0.5:
+            image = transforms.ColorJitter(brightness=0.2, contrast=0.2)(image)
+
+    # Convert to tensors and normalize
+    image_tensor = transforms.ToTensor()(image)
+    mask_tensor = transforms.ToTensor()(mask)
+
+    return image_tensor, mask_tensor
+
+
 def split_dataset(image_folder, mask_folder, test_size=0.30, random_state=42):
     """
     Split dataset into train (70%), validation (15%), and test (15%) sets.
@@ -174,5 +214,18 @@ if __name__ == '__main__':
         image_folder='data/ECSSD/resized_images_128',
         mask_folder='data/ECSSD/resized_masks_128'
     )
+
+    # Test augmentation
+    print("\nTesting augmentation...")
+    sample_image = Image.open('data/ECSSD/resized_images_128/0001.jpg')
+    sample_mask = Image.open('data/ECSSD/resized_masks_128/0001.png')
+
+    # With augmentation (training)
+    aug_img, aug_mask = apply_augmentation(sample_image, sample_mask, augment=True)
+    print(f"With augmentation - Image: {aug_img.shape}, Mask: {aug_mask.shape}")
+
+    # Without augmentation (validation/test)
+    img, mask = apply_augmentation(sample_image, sample_mask, augment=False)
+    print(f"Without augmentation - Image: {img.shape}, Mask: {mask.shape}")
 
     print("\nPreprocessing complete.")
