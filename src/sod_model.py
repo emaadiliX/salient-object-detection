@@ -1,5 +1,5 @@
 """
-Simple CNN model for salient object detection.
+CNN model for salient object detection.
 """
 import torch
 import torch.nn as nn
@@ -9,49 +9,86 @@ class SODModel(nn.Module):
     def __init__(self):
         super(SODModel, self).__init__()
 
-        # Layer 1
-        self.conv1 = nn.Conv2d(
-            in_channels=3, out_channels=64, kernel_size=3, padding=1)
-        self.relu1 = nn.ReLU()  # Activation function (adds non-linearity)
+        # Encoder
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
+        self.relu1 = nn.ReLU()
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        # Layer 2
-        self.conv2 = nn.Conv2d(
-            in_channels=64, out_channels=128, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         self.relu2 = nn.ReLU()
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        # Layer 3
-        self.conv3 = nn.Conv2d(
-            in_channels=128, out_channels=256, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
         self.relu3 = nn.ReLU()
         self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        # Layer 4
-        self.conv4 = nn.Conv2d(
-            in_channels=256, out_channels=512, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(256, 512, kernel_size=3, padding=1)
         self.relu4 = nn.ReLU()
         self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2)
 
+        # Decoder
+        self.upconv1 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
+        self.relu_up1 = nn.ReLU()
+
+        self.upconv2 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
+        self.relu_up2 = nn.ReLU()
+
+        self.upconv3 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+        self.relu_up3 = nn.ReLU()
+
+        self.upconv4 = nn.ConvTranspose2d(64, 32, kernel_size=2, stride=2)
+        self.relu_up4 = nn.ReLU()
+
+        # Output
+        self.output_conv = nn.Conv2d(32, 1, kernel_size=1)
+        self.sigmoid = nn.Sigmoid()
+
     def forward(self, x):
-        # Encoder Layer 1
-        x = self.conv1(x)   # Shape: (batch, 64, 128, 128)
+        # Encoder
+        x = self.conv1(x)
         x = self.relu1(x)
-        x = self.pool1(x)   # (batch, 64, 64, 64)
+        x = self.pool1(x)
 
-        # Encoder Layer 2
-        x = self.conv2(x)   # Shape: (batch, 128, 64, 64)
+        x = self.conv2(x)
         x = self.relu2(x)
-        x = self.pool2(x)   # (batch, 128, 32, 32)
+        x = self.pool2(x)
 
-        # Encoder Layer 3
-        x = self.conv3(x)   # Shape: (batch, 256, 32, 32)
+        x = self.conv3(x)
         x = self.relu3(x)
-        x = self.pool3(x)   # (batch, 256, 16, 16)
+        x = self.pool3(x)
 
-        # Encoder Layer 4
-        x = self.conv4(x)   # Shape: (batch, 512, 16, 16)
+        x = self.conv4(x)
         x = self.relu4(x)
-        x = self.pool4(x)   # (batch, 512, 8, 8)
+        x = self.pool4(x)
+
+        # Decoder
+        x = self.upconv1(x)
+        x = self.relu_up1(x)
+
+        x = self.upconv2(x)
+        x = self.relu_up2(x)
+
+        x = self.upconv3(x)
+        x = self.relu_up3(x)
+
+        x = self.upconv4(x)
+        x = self.relu_up4(x)
+
+        # Output
+        x = self.output_conv(x)
+        x = self.sigmoid(x)
 
         return x
+
+
+if __name__ == '__main__':
+    model = SODModel()
+
+    # Test input (2 images, 3 channels, 128x128)
+    test_input = torch.randn(2, 3, 128, 128)
+    print(f"Input shape: {test_input.shape}")
+
+    output = model(test_input)
+    print(f"Output shape: {output.shape}")
+
+    print("\nModel works!")
