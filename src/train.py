@@ -142,7 +142,7 @@ def main():
         train_loader=train_loader,
         val_loader=val_loader,
         optimizer=optimizer,
-        epochs=6,
+        epochs=25,
         patience=5
     )
 
