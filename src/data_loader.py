@@ -11,7 +11,6 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import torch
 import platform
-from torch.utils.data import DataLoader
 
 
 def resize_images(input_folder, output_folder, target_size=224):
@@ -306,9 +305,9 @@ if __name__ == '__main__':
     # Apply augmentation
     aug_img, aug_mask = apply_augmentation(img, mask, augment=True)
 
-print(
-    f"Augmented image shape: {aug_img.shape}, range [{aug_img.min():.3f}, {aug_img.max():.3f}]")
-print(
-    f"Augmented mask  shape: {aug_mask.shape}, range [{aug_mask.min():.3f}, {aug_mask.max():.3f}]")
+    print(
+        f"Augmented image shape: {aug_img.shape}, range [{aug_img.min():.3f}, {aug_img.max():.3f}]")
+    print(
+        f"Augmented mask  shape: {aug_mask.shape}, range [{aug_mask.min():.3f}, {aug_mask.max():.3f}]")
 
-print("\nData loading pipeline ready!")
+    print("\nData loading pipeline ready!")
