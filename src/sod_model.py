@@ -3,6 +3,7 @@ CNN model for salient object detection.
 """
 import torch
 import torch.nn as nn
+import torch.optim as optim
 
 
 class SODModel(nn.Module):
@@ -81,8 +82,82 @@ class SODModel(nn.Module):
         return x
 
 
+def sod_loss(pred, target):
+    """Calculate loss"""
+    bce = nn.BCELoss()
+    bce_loss = bce(pred, target)
+
+    # IoU
+    intersection = (pred * target).sum()
+    union = pred.sum() + target.sum() - intersection
+    iou = (intersection + 1e-6) / (union + 1e-6)
+
+    loss = bce_loss + 0.5 * (1 - iou)
+
+    return loss
+
+
+def get_optimizer(model, learning_rate=1e-3):
+    return optim.Adam(model.parameters(), lr=learning_rate)
+
+
+def train_model(model, train_loader, val_loader, optimizer, epochs=25, patience=5):
+    """Train model with early stopping"""
+    best_val_loss = 999999.0
+    no_improve_count = 0
+
+    for epoch in range(epochs):
+        model.train()
+        total_train_loss = 0.0
+
+        for images, masks in train_loader:
+            # Forward pass
+            outputs = model(images)
+            loss = sod_loss(outputs, masks)
+
+            # Backward pass
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            total_train_loss += loss.item()
+
+        avg_train_loss = total_train_loss / len(train_loader)
+
+        # Validation
+        model.eval()
+        total_val_loss = 0.0
+
+        with torch.no_grad():
+            for images, masks in val_loader:
+                outputs = model(images)
+                loss = sod_loss(outputs, masks)
+                total_val_loss += loss.item()
+
+        avg_val_loss = total_val_loss / len(val_loader)
+
+        print(f"Epoch {epoch+1}/{epochs} - Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
+
+        # Early stopping
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            no_improve_count = 0
+            torch.save(model.state_dict(), 'best_model.pth')
+            print("  Saved best model")
+        else:
+            no_improve_count += 1
+            print(f"  No improvement ({no_improve_count}/{patience})")
+
+        if no_improve_count >= patience:
+            print(f"Early stopping at epoch {epoch+1}")
+            break
+
+    print(f"Training done. Best val loss: {best_val_loss:.4f}")
+
+
 if __name__ == '__main__':
     model = SODModel()
+    optimizer = get_optimizer(model, learning_rate=1e-3)
 
     # Test input (2 images, 3 channels, 128x128)
     test_input = torch.randn(2, 3, 128, 128)
@@ -90,5 +165,7 @@ if __name__ == '__main__':
 
     output = model(test_input)
     print(f"Output shape: {output.shape}")
+
+    print(f"Optimizer: Adam with lr={optimizer.param_groups[0]['lr']}")
 
     print("\nModel works!")
