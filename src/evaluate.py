@@ -70,7 +70,7 @@ def visualize_predictions(model, test_loader, device, num_samples=5, save_path='
                 axes[1].set_title('Ground Truth Mask')
                 axes[1].axis('off')
 
-                axes[2].imshow(pred_mask, cmap='gray')
+                axes[2].imshow(pred_binary, cmap='gray')
                 axes[2].set_title('Predicted Mask')
                 axes[2].axis('off')
 

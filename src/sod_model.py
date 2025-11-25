@@ -31,6 +31,9 @@ class SODModel(nn.Module):
         self.relu4 = nn.ReLU()
         self.pool4 = nn.MaxPool2d(kernel_size=2, stride=2)
 
+        # Dropout
+        self.dropout = nn.Dropout(0.3)
+
         # Decoder
         self.upconv1 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
         self.bn_up1 = nn.BatchNorm2d(256)
@@ -73,6 +76,8 @@ class SODModel(nn.Module):
         x = self.bn4(x)
         x = self.relu4(x)
         x = self.pool4(x)
+
+        x = self.dropout(x)
 
         # Decoder
         x = self.upconv1(x)
