@@ -113,7 +113,7 @@ def sod_loss(pred, target):
     union = pred.sum() + target.sum() - intersection
     iou = (intersection + 1e-6) / (union + 1e-6)
 
-    loss = bce_loss + 0.5 * (1 - iou)
+    loss = bce_loss + 1.0 * (1 - iou)
 
     return loss
 
