@@ -14,6 +14,11 @@ def train_model(model, train_loader, val_loader, optimizer, epochs=25, patience=
     print(f"Using device: {device}")
     model = model.to(device)
 
+    # Learning rate scheduler - reduce LR when validation loss stops improving
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.5, patience=2
+    )
+
     best_val_loss = 999999.0
     no_improve_count = 0
     start_epoch = 0
@@ -24,6 +29,7 @@ def train_model(model, train_loader, val_loader, optimizer, epochs=25, patience=
         checkpoint = torch.load(checkpoint_path, map_location=device)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         start_epoch = checkpoint['epoch'] + 1
         best_val_loss = checkpoint['best_val_loss']
         no_improve_count = checkpoint['no_improve_count']
@@ -83,7 +89,11 @@ def train_model(model, train_loader, val_loader, optimizer, epochs=25, patience=
         avg_val_loss = total_val_loss / len(val_loader)
         avg_val_iou = total_val_iou / len(val_loader)
 
-        print(f"Epoch {epoch+1}/{epochs} - Train Loss: {avg_train_loss:.4f}, Train IoU: {avg_train_iou:.4f}, Val Loss: {avg_val_loss:.4f}, Val IoU: {avg_val_iou:.4f}")
+        # Step the scheduler based on validation loss
+        scheduler.step(avg_val_loss)
+        current_lr = optimizer.param_groups[0]['lr']
+
+        print(f"Epoch {epoch+1}/{epochs} - Train Loss: {avg_train_loss:.4f}, Train IoU: {avg_train_iou:.4f}, Val Loss: {avg_val_loss:.4f}, Val IoU: {avg_val_iou:.4f}, LR: {current_lr:.6f}")
 
         # Early stopping
         if avg_val_loss < best_val_loss:
@@ -100,6 +110,7 @@ def train_model(model, train_loader, val_loader, optimizer, epochs=25, patience=
             'epoch': epoch,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
             'best_val_loss': best_val_loss,
             'no_improve_count': no_improve_count
         }
