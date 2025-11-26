@@ -4,7 +4,7 @@ A CNN-based salient object detection system that identifies and segments the mos
 
 ## Dataset Setup
 
-1. Download the ECSSD dataset
+1. Download the ECSSD dataset from: https://www.cse.cuhk.edu.hk/leojia/projects/hsaliency/dataset.html
 2. Create the following folder structure:
    ```
    data/
@@ -57,7 +57,7 @@ A CNN-based salient object detection system that identifies and segments the mos
 
 ## Demo Notebook
 
-`demo.ipynb` is a simple demonstration for running inference on a single image. It loads the trained model from `best_model.pth` and displays:
+`demo.ipynb` is a simple demonstration for running inference on a single image. It loads the model architecture from `sod_model.py` and the trained weights from `best_model.pth`, then displays:
 
 - Input image
 - Predicted saliency mask
