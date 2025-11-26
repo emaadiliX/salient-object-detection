@@ -9,7 +9,6 @@ from PIL import Image
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-import torch
 import platform
 
 
