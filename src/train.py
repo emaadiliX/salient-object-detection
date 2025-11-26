@@ -9,7 +9,6 @@ from data_loader import split_dataset, create_dataloaders
 
 def train_model(model, train_loader, val_loader, optimizer, epochs=25, patience=5, checkpoint_path='checkpoint.pth'):
     """Train model with early stopping and checkpoint resume"""
-    # Device setup
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
     model = model.to(device)
@@ -36,7 +35,6 @@ def train_model(model, train_loader, val_loader, optimizer, epochs=25, patience=
         print(f"Resumed from epoch {start_epoch}")
 
     for epoch in range(start_epoch, epochs):
-        # Training
         model.train()
         total_train_loss = 0.0
         total_train_iou = 0.0
@@ -65,14 +63,12 @@ def train_model(model, train_loader, val_loader, optimizer, epochs=25, patience=
         avg_train_loss = total_train_loss / len(train_loader)
         avg_train_iou = total_train_iou / len(train_loader)
 
-        # Validation
         model.eval()
         total_val_loss = 0.0
         total_val_iou = 0.0
 
         with torch.no_grad():
             for images, masks in val_loader:
-                # Move to device
                 images = images.to(device)
                 masks = masks.to(device)
 
@@ -129,24 +125,18 @@ def train_model(model, train_loader, val_loader, optimizer, epochs=25, patience=
 
 
 def main():
-    # Split dataset
     train_pairs, val_pairs, test_pairs = split_dataset(
         image_folder='data/ECSSD/resized_images_128',
         mask_folder='data/ECSSD/resized_masks_128'
     )
 
-    # Create dataloaders
     train_loader, val_loader, test_loader = create_dataloaders(
         train_pairs, val_pairs, test_pairs, batch_size=16
     )
 
-    # Create model
     model = SODModel()
-
-    # Create optimizer
     optimizer = get_optimizer(model, learning_rate=1e-3)
 
-    # Train model
     print("\nStarting training...")
     train_model(
         model=model,

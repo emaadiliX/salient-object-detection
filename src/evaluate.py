@@ -12,11 +12,10 @@ from data_loader import split_dataset, create_dataloaders
 def calculate_metrics(pred, target, threshold=0.5):
     """Calculate IoU, Precision, Recall, F1-Score, and MAE"""
     pred_binary = (pred > threshold).float()
-    target_binary = target
 
-    tp = (pred_binary * target_binary).sum()
-    fp = (pred_binary * (1 - target_binary)).sum()
-    fn = ((1 - pred_binary) * target_binary).sum()
+    tp = (pred_binary * target).sum()
+    fp = (pred_binary * (1 - target)).sum()
+    fn = ((1 - pred_binary) * target).sum()
 
     intersection = tp
     union = tp + fp + fn
@@ -58,7 +57,7 @@ def visualize_predictions(model, test_loader, device, num_samples=5, save_path='
                 pred_binary = (pred_mask > 0.5).astype(np.float32)
 
                 overlay = img.copy()
-                overlay[:, :, 0] = np.where(pred_binary > 0.5, 1.0, overlay[:, :, 0])
+                overlay[:, :, 0] = np.where(pred_binary == 1, 1.0, overlay[:, :, 0])
 
                 fig, axes = plt.subplots(1, 4, figsize=(16, 4))
 

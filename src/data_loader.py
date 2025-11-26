@@ -85,7 +85,6 @@ def split_dataset(image_folder, mask_folder, test_size=0.30, random_state=42):
     Returns:
         tuple: (train_pairs, val_pairs, test_pairs)
     """
-    # Collect all image-mask file pairs
     image_files = sorted([f for f in os.listdir(image_folder)
                          if f.endswith(('.jpg', '.jpeg', '.png', '.bmp'))])
 
@@ -98,7 +97,6 @@ def split_dataset(image_folder, mask_folder, test_size=0.30, random_state=42):
         if os.path.exists(mask_path):
             file_pairs.append((img_path, mask_path))
 
-    # Split into train (70%) and temp (30%)
     train_pairs, temp_pairs = train_test_split(
         file_pairs,
         test_size=test_size,
@@ -106,7 +104,6 @@ def split_dataset(image_folder, mask_folder, test_size=0.30, random_state=42):
         shuffle=True
     )
 
-    # Split temp into val (15%) and test (15%)
     val_pairs, test_pairs = train_test_split(
         temp_pairs,
         test_size=0.50,
@@ -187,11 +184,9 @@ class SODDataset(Dataset):
         """
         img_path, mask_path = self.file_pairs[idx]
 
-        # Load image and mask
         image = Image.open(img_path).convert('RGB')
         mask = Image.open(mask_path).convert('L')
 
-        # Apply augmentation and convert to tensors
         image_tensor, mask_tensor = apply_augmentation(
             image, mask, self.augment)
 
@@ -207,7 +202,6 @@ def create_dataloaders(train_pairs, val_pairs, test_pairs, batch_size=16):
         val_pairs: List of validation pairs
         test_pairs: List of test pairs
         batch_size: Number of samples per batch
-        num_workers: Number of subprocesses for data loading 
 
     Returns:
         tuple: (train_loader, val_loader, test_loader)
